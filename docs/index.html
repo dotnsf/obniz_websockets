@@ -1,0 +1,95 @@
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<script src="//code.jquery.com/jquery-3.2.1.min.js"></script>
+<link href="//maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"/>
+<script src="//maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+<script src="https://unpkg.com/obniz@3.19.0/obniz.js" crossorigin="anonymous"></script>
+<script src="./mqttws31.js"></script>
+<script>
+var client = null;
+var obj = { data: { x: 0.0, y: 0.0, z: 0 } };
+
+function getParam( name, url ){
+  if( !url ) url = window.location.href;
+  name = name.replace(/[\[\]]/g, "\\$&");
+  var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+      results = regex.exec(url);
+  if( !results ) return null;
+  if( !results[2] ) return '';
+  return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+
+function publishMessage( x, y, z, ts ){
+  if( obj != null ){
+    obj.data.x = x;
+    obj.data.y = y;
+    obj.data.z = z;
+    obj.data.ts = ts;
+
+    obj.publish();
+  }
+}
+
+obj.publish = function(){
+  var message = new Messaging.Message( JSON.stringify( obj.data ) );
+  console.log( message );
+}
+
+var obnizid = getParam( 'obnizid' );
+var obniz_clients = {};
+if( obnizid ){
+  var obniz = new Obniz.M5StickC( obnizid );
+  obniz.onconnect = async () => {
+      /*
+    if( !obniz_clients[obnizid] ){
+      var target = {
+        startX: 0,
+        startY: 0,
+        x: 0,
+        y: 0,
+        color: "black",
+        isDrawing: false
+      };
+      obniz_clients[obnizid] = { obniz: obniz, target: target };
+    }
+    */
+
+    //. Joystick
+    var joystick = obniz.wired( "Grove_JoyStick", { grove: obniz.grove0 } );
+    while( true ){
+      var x = await joystick.getXWait()
+      var y = await joystick.getYWait()
+      var z = await joystick.isPressedWait();
+      var ts = ( new Date() ).getTime();
+      console.log( `${ts} : ${x}-${y}-${z}` );
+      publishMessage( x, y, z, ts );
+      await obniz.wait( 100 );
+    }
+  }
+}
+
+$(function(){
+  //connect();
+
+  $('#cdiv').html( '<canvas width="80%" height="80%" id="mycanvas"></canvas>' );
+  var canvas = document.getElementById( 'mycanvas' );
+  if( !canvas || !canvas.getContext ){
+    return false;
+  }
+  var ctx = canvas.getContext( '2d' );
+
+  var borderWidth = 1;
+});
+</script>
+</head>
+<body>
+<div id="obniz-debug"></div>
+
+<div id="canvas_div">
+  <div id="cdiv"></div>
+</div>
+
+</body>
+</html>
