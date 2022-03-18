@@ -38,9 +38,10 @@ obj.publish = function(){
 }
 
 var obnizid = getParam( 'obnizid' );
+var obniz = null;
 var obniz_clients = {};
 if( obnizid ){
-  var obniz = new Obniz.M5StickC( obnizid );
+  obniz = new Obniz.M5StickC( obnizid );
   obniz.onconnect = async () => {
       /*
     if( !obniz_clients[obnizid] ){
@@ -68,6 +69,8 @@ if( obnizid ){
       await obniz.wait( 100 );
     }
   }
+}else{
+  alert( "access has to be done with obnizid=XXXXXXXX parameter" );
 }
 
 $(function(){
